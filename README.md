@@ -1,6 +1,6 @@
 ## Email Polish (Assisted Authoring)
 
-React email composer scaffold that integrates with Groq (OpenAI-compatible API) to **refine** email text using an **Assisted Authoring** pattern:
+Prototype for AI email composer that integrates with Groq (OpenAI-compatible API) to **refine** email text using an **Assisted Authoring** pattern:
 
 - User writes normally
 - AI proposes a polished version
