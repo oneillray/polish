@@ -332,6 +332,27 @@ body {
   user-select: none;
 }
 
+.modeToggle {
+  display: inline-flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.modeToggleBtn {
+  border-radius: 999px;
+  border: 1px solid var(--gcss-color-border-primary);
+  padding: 4px 12px;
+  background: transparent;
+  color: var(--gcss-color-foreground-primary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.modeToggleBtn.active {
+  background: var(--gse-ui-button-secondary-default-backgroundColor, rgba(255, 255, 255, 0.08));
+  color: var(--email-toolbar-color);
+}
+
 .sparkIconButton[aria-pressed="true"] {
   border-color: rgba(124, 92, 255, 0.7);
   box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.12);

@@ -3,6 +3,7 @@ import { BubbleMenu, EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import {
+  GuxActionButton,
   GuxCard,
   GuxFormFieldTextLike,
   GuxList,
@@ -45,6 +46,7 @@ export function EmailRect() {
 
   const selectionRef = useRef<{ from: number; to: number } | null>(null);
   const [aiMenuOpen, setAiMenuOpen] = useState(false);
+  const [polishScope, setPolishScope] = useState<"selection" | "full">("selection");
 
   const editor = useEditor({
     extensions: [
@@ -103,6 +105,34 @@ export function EmailRect() {
     }
   }
 
+  async function runRefineFullText(mode: PolishMode) {
+    if (!editor) return;
+    const text = editor.state.doc.textContent ?? "";
+    if (!text.trim()) return;
+
+    setError(null);
+    setIsPolishing(true);
+    setAiMenuOpen(false);
+    try {
+      const docSize = editor.state.doc.content.size;
+      selectionRef.current = { from: 0, to: docSize };
+      const polished = await polishEmail(text, mode);
+      setPendingReview({ mode, original: text, polished });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Failed to refine text.";
+      setError(message);
+    } finally {
+      setIsPolishing(false);
+    }
+  }
+
+  function refineForScope(mode: PolishMode) {
+    if (polishScope === "selection") {
+      return runRefineSelection(mode);
+    }
+    return runRefineFullText(mode);
+  }
+
   function acceptPolish() {
     if (!editor) return;
     if (!pendingReview) return;
@@ -134,6 +164,22 @@ export function EmailRect() {
         <div className="emailRectHeader">
           <div className="emailRectTitle">New message</div>
           {editor ? <SparkToolbar editor={editor} onAiUndo={undoAi} canAiUndo={canAiUndo} /> : null}
+        </div>
+        <div className="modeToggle">
+          <button
+            type="button"
+            className={`modeToggleBtn ${polishScope === "selection" ? "active" : ""}`}
+            onClick={() => setPolishScope("selection")}
+          >
+            Selection
+          </button>
+          <button
+            type="button"
+            className={`modeToggleBtn ${polishScope === "full" ? "active" : ""}`}
+            onClick={() => setPolishScope("full")}
+          >
+            Full draft
+          </button>
         </div>
 
         <div className="emailRectFields">
@@ -190,7 +236,7 @@ export function EmailRect() {
                             {(Object.keys(MODE_LABEL) as PolishMode[]).map((mode) => (
                               <GuxListItem
                                 key={mode}
-                                onClick={() => runRefineSelection(mode)}
+                            onClick={() => refineForScope(mode)}
                               >
                                 <div className="emailRectAiMenuItem">
                                   <div className="emailRectAiMenuItemTitle">

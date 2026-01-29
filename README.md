@@ -36,6 +36,10 @@ Note: If you change `.env`, **restart** `npm run dev` for changes to take effect
 npm run dev
 ```
 
+### Design notes
+
+See [`design/assisted-authoring-ideas.md`](design/assisted-authoring-ideas.md) for UI ideas before coding.
+
 ### Deploy to Vercel
 
 - **1) Push to GitHub** (Vercel deploys from a repo)
