@@ -106,9 +106,7 @@ function groqPolishMiddleware(apiKey: string | undefined): Plugin {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
-                Accept: "application/json",
                 Authorization: `Bearer ${apiKey}`,
-                "User-Agent": "polish-feature-dev/1.0",
               },
               body: JSON.stringify({
                 model: "llama-3.3-70b-versatile",
@@ -124,23 +122,11 @@ function groqPolishMiddleware(apiKey: string | undefined): Plugin {
 
             if (!groqRes.ok) {
               const details = await groqRes.text().catch(() => "");
-              // Helpful debugging info for 403/network issues (no secrets).
-              const requestId =
-                groqRes.headers.get("x-request-id") ||
-                groqRes.headers.get("x-groq-request-id") ||
-                groqRes.headers.get("cf-ray") ||
-                undefined;
-              console.error("[/api/polish] Groq error", {
-                status: groqRes.status,
-                requestId,
-                details: details.slice(0, 300),
-              });
               res.statusCode = 502;
               res.setHeader("Content-Type", "application/json");
               res.end(
                 JSON.stringify({
                   error: `Groq request failed (${groqRes.status}).`,
-                  requestId,
                   details: details.slice(0, 1000),
                 }),
               );
@@ -181,8 +167,15 @@ export default defineConfig(({ mode }) => {
   const apiKey = env.GROQ_API_KEY || env.VITE_GROQ_API_KEY || process.env.GROQ_API_KEY;
 
   return {
-    // Middleware only needed for local dev. Production (Vercel) should use /api/polish serverless function.
-    plugins: mode === "development" ? [react(), groqPolishMiddleware(apiKey)] : [react()],
+    plugins: [react(), groqPolishMiddleware(apiKey)],
+    build: {
+      rollupOptions: {
+        input: {
+          selection: "./index-selection.html",
+          full: "./index-full.html",
+        },
+      },
+    },
   };
 });
 

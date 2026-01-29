@@ -26,11 +26,11 @@ export function DiffReviewModal({
       <div slot="content">
         <div className="compare">
           <GuxCard accent="bordered" className="compareCard">
-            <div className="paneTitle primary">Original</div>
+            <div className="gux-heading-md-semibold gux-text-color-primary">Original</div>
             <div className="pane color-primary">{original}</div>
           </GuxCard>
           <GuxCard accent="bordered" className="compareCard">
-            <div className="paneTitle primary">Polished</div>
+            <div className="gux-heading-md-semibold gux-text-color-primary">Polished</div>
             <div className="pane color-primary">{polished}</div>
           </GuxCard>
         </div>

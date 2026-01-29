@@ -401,6 +401,10 @@ body {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--email-toolbar-color) 20%, transparent);
 }
 
+.modeToggleWrapper {
+  margin-top: 10px;
+}
+
 .sparkEditorProse {
   font-family: "Noto Sans", var(--gcss-font-family-sans);
   font-size: var(--gcss-font-size-body);

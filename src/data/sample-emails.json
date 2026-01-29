@@ -1,0 +1,52 @@
+[
+  {
+    "subject": "Urgent: Verification of Recent Activity on Account Ending in 4492",
+    "agent_email": "john.doe@veridian-crest.bank",
+    "content": "Dear Valued Customer,\n\nOur security systems at **Veridian Crest Bank** flagged a potential unauthorized transaction for **$1,240.00** at an electronics retailer earlier today. For your protection, we have temporarily restricted your card ending in **4492**.\n\nPlease log in to our secure portal via this link: https://veridian-crest.bank/secure-auth to confirm if this was you. If you did not authorize this, call our fraud department immediately at **+1-555-0199**.\n\nBest regards,\nJohn Doe"
+  },
+  {
+    "subject": "Confirmation: Update to Your Primary Mailing Address",
+    "agent_email": "john.doe@veridian-crest.bank",
+    "content": "Hello,\n\nThis email confirms that as of **January 29, 2026**, your primary residential address has been updated in our system to **742 Evergreen Terrace, Springfield, OR 97403**.\n\nIf you did not request this change, please contact **Veridian Crest Bank** customer support at your earliest convenience.\n\nThank you,\nJohn Doe"
+  },
+  {
+    "subject": "Action Required: International Wire Transfer Missing Information",
+    "agent_email": "john.doe@veridian-crest.bank",
+    "content": "Regarding your wire transfer request dated **January 27, 2026**, we require further clarification. The provided **IBAN** for the recipient appears to be missing a character. \n\nTo ensure your funds reach the destination, please reply with the full IBAN and the corresponding **Sort Code** (currently listed as **20-45-08** in our draft). For security, do not include your full account number in the reply.\n\nSincerely,\nJohn Doe\nVeridian Crest Bank"
+  },
+  {
+    "subject": "Case Update: Dispute ID #VCB-99821-X",
+    "agent_email": "john.doe@veridian-crest.bank",
+    "content": "Dear Customer,\n\nI am writing to provide an update on your **Dispute Case ID: #VCB-99821-X**. Our merchant relations team has received a response from the vendor regarding the disputed amount of **$85.50**.\n\nWe have issued a provisional credit to your account **#882910443**. This credit will become permanent pending the final 30-day review period.\n\nRegards,\nJohn Doe"
+  },
+  {
+    "subject": "Your New Veridian Crest Bank Debit Card is on the Way",
+    "agent_email": "john.doe@veridian-crest.bank",
+    "content": "Great news! Your replacement debit card has been processed. You should receive it at your registered address within 5-7 business days. Please note that for security, your new card will have a different **Last 4 Digits** than your previous one. \n\nOnce it arrives, you can activate it by calling **+1-800-VCB-CARD** or through the mobile app.\n\nBest,\nJohn Doe"
+  },
+  {
+    "subject": "Important Information Regarding Your Tax Document (Form 1099-INT)",
+    "agent_email": "john.doe@veridian-crest.bank",
+    "content": "Dear Customer,\n\nYour tax documents for the previous fiscal year are now available for download. Your total interest earned across all **Veridian Crest Bank** holdings was **$412.18**. \n\nYou can access your documents by navigating to the 'Statements' tab after logging in at https://veridian-crest.bank/portal/tax-center.\n\nThank you,\nJohn Doe"
+  },
+  {
+    "subject": "Notice: Overdraft Protection Activation",
+    "agent_email": "john.doe@veridian-crest.bank",
+    "content": "This is an automated notification from **Veridian Crest Bank**. Your account **#110022938** fell below a $0.00 balance on **January 28, 2026**. \n\nAs per your agreement, we have transferred **$50.00** from your linked savings account to cover the shortfall. No overdraft fees were incurred during this transaction.\n\nJohn Doe\nAccount Manager"
+  },
+  {
+    "subject": "Inquiry Regarding Your Personal Loan Application ID: PL-5562",
+    "agent_email": "john.doe@veridian-crest.bank",
+    "content": "Hello,\n\nI'm John Doe from the lending department at **Veridian Crest Bank**. I'm reviewing your application for a personal loan (**ID: PL-5562**). \n\nTo move forward, I need a scanned copy of your government-issued **ID** (Driver's License or Passport). Please upload this document through our secure file transfer link: https://veridian-crest.bank/uploads/secure.\n\nI look forward to assisting you.\n\nJohn Doe"
+  },
+  {
+    "subject": "Scheduled Maintenance: Veridian Crest Bank Digital Banking",
+    "agent_email": "john.doe@veridian-crest.bank",
+    "content": "Please be advised that **Veridian Crest Bank** will be performing system maintenance on **Sunday, February 1, 2026**, from 02:00 AM to 06:00 AM EST. \n\nDuring this time, you may be unable to access your online dashboard or view your **IBAN** and transaction history. We apologize for any inconvenience.\n\nBest,\nJohn Doe"
+  },
+  {
+    "subject": "Final Notice: Inactive Account Status",
+    "agent_email": "john.doe@veridian-crest.bank",
+    "content": "Our records indicate that your account ending in **3301** has not had any user-initiated activity for the past 11 months. \n\nTo avoid the account being marked as abandoned, please perform a small deposit or withdrawal before **March 15, 2026**. If you have questions, please reach us at **+1-555-0122**.\n\nSincerely,\nJohn Doe\nVeridian Crest Bank"
+  }
+]

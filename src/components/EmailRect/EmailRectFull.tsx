@@ -1,16 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { BubbleMenu, EditorContent, useEditor } from "@tiptap/react";
+import { useMemo, useRef, useState } from "react";
+import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import {
-  GuxActionButton,
   GuxCard,
   GuxFormFieldTextLike,
-  GuxList,
-  GuxListItem,
-  GuxPopup,
   GuxButton,
-  GuxToggle,
 } from "genesys-spark-components-react";
 import { polishEmail, type PolishMode } from "../../lib/gemini/polishEmail";
 import { DiffReviewModal } from "../EmailComposer/DiffReviewModal";
@@ -29,14 +24,7 @@ const MODE_LABEL: Record<PolishMode, string> = {
   concise: "Concise",
 };
 
-const MODE_HELP: Record<PolishMode, string> = {
-  "fix-clean": "Grammar & typos only (no tone changes).",
-  "professional": "More formal, clearer, still factual.",
-  "friendly": "Warmer and more casual, still professional.",
-  "concise": "Shorter while preserving facts.",
-};
-
-export function EmailRect() {
+export function EmailRectFull() {
   const [to, setTo] = useState("alex@example.com");
   const [subject, setSubject] = useState("Following up on proposal");
 
@@ -46,8 +34,6 @@ export function EmailRect() {
   const [error, setError] = useState<string | null>(null);
 
   const selectionRef = useRef<{ from: number; to: number } | null>(null);
-  const [aiMenuOpen, setAiMenuOpen] = useState(false);
-  const [polishScope, setPolishScope] = useState<"selection" | "full">("selection");
 
   const editor = useEditor({
     extensions: [
@@ -57,7 +43,7 @@ export function EmailRect() {
       }),
     ],
     content: `<p>Hi Alex,</p>
-<p>Just wanted to follow up on the proposal we discussed on Jan 10. Here’s the link: https://example.com/proposal</p>
+<p>Just wanted to follow up on the proposal we discussed on Jan 10. Here's the link: https://example.com/proposal</p>
 <p>Can we finalize by Friday?</p>
 <p>Thanks,<br/>Ray</p>`,
     editorProps: {
@@ -72,39 +58,8 @@ export function EmailRect() {
   const helperText = useMemo(() => {
     if (isPolishing) return "Refining with AI…";
     if (error) return error;
-    return "Select text to polish. You’ll review changes before applying.";
+    return "Click to polish entire draft. You'll review changes before applying.";
   }, [error, isPolishing]);
-
-  useEffect(() => {
-    if (!editor) return;
-    // Close the AI menu as selection changes (prevents stale anchoring).
-    const handler = () => setAiMenuOpen(false);
-    editor.on("selectionUpdate", handler);
-    return () => {
-      editor.off("selectionUpdate", handler);
-    };
-  }, [editor]);
-
-  async function runRefineSelection(mode: PolishMode) {
-    if (!editor) return;
-    const { from, to } = editor.state.selection;
-    if (from === to) return;
-
-    setError(null);
-    setIsPolishing(true);
-    setAiMenuOpen(false);
-    try {
-      const selectedText = editor.state.doc.textBetween(from, to, "\n\n");
-      selectionRef.current = { from, to };
-      const polished = await polishEmail(selectedText, mode);
-      setPendingReview({ mode, original: selectedText, polished });
-    } catch (e) {
-      const message = e instanceof Error ? e.message : "Failed to refine text.";
-      setError(message);
-    } finally {
-      setIsPolishing(false);
-    }
-  }
 
   async function runRefineFullText(mode: PolishMode) {
     if (!editor) return;
@@ -113,7 +68,6 @@ export function EmailRect() {
 
     setError(null);
     setIsPolishing(true);
-    setAiMenuOpen(false);
     try {
       const docSize = editor.state.doc.content.size;
       selectionRef.current = { from: 0, to: docSize };
@@ -125,13 +79,6 @@ export function EmailRect() {
     } finally {
       setIsPolishing(false);
     }
-  }
-
-  function refineForScope(mode: PolishMode) {
-    if (polishScope === "selection") {
-      return runRefineSelection(mode);
-    }
-    return runRefineFullText(mode);
   }
 
   function acceptPolish() {
@@ -166,16 +113,6 @@ export function EmailRect() {
           <div className="emailRectTitle">New message</div>
           {editor ? <SparkToolbar editor={editor} onAiUndo={undoAi} canAiUndo={canAiUndo} /> : null}
         </div>
-        <div className="modeToggleWrapper">
-          <GuxToggle
-            checked={polishScope === "full"}
-            checkedLabel="Full draft"
-            uncheckedLabel="Selection"
-            label="Polish mode"
-            label-position="left"
-            onCheck={(event: CustomEvent<boolean>) => setPolishScope(event.detail ? "full" : "selection")}
-          />
-        </div>
 
         <div className="emailRectFields">
           <GuxFormFieldTextLike label-position="beside" className="emailRectField">
@@ -203,56 +140,16 @@ export function EmailRect() {
 
         <div className="emailRectBody">
           <div className="sparkEditorShell">
-            {editor ? (
-              <>
-                <EditorContent editor={editor} />
-                <BubbleMenu
-                  editor={editor}
-                  tippyOptions={{ duration: 120 }}
-                  shouldShow={({ state }) =>
-                    polishScope === "selection" && state.selection.from !== state.selection.to
-                  }
-                >
-                  <div className="emailRectBubble">
-                    <GuxPopup expanded={aiMenuOpen} placement="bottom-end" exceed-target-width>
-                      <div slot="target">
-                        <GuxButton
-                          accent="secondary"
-                          disabled={isPolishing}
-                          onClick={() => setAiMenuOpen((v) => !v)}
-                        >
-                          Polish
-                        </GuxButton>
-                      </div>
-
-                      <div slot="popup" className="emailRectAiMenu">
-                        {isPolishing ? (
-                          <div className="emailRectAiMenuLoading">Working…</div>
-                        ) : (
-                          <GuxList>
-                            {(Object.keys(MODE_LABEL) as PolishMode[]).map((mode) => (
-                              <GuxListItem
-                                key={mode}
-                            onClick={() => refineForScope(mode)}
-                              >
-                                <div className="emailRectAiMenuItem">
-                                  <div className="emailRectAiMenuItemTitle">
-                                    {MODE_LABEL[mode]}
-                                  </div>
-                                  <div className="emailRectAiMenuItemHelp">
-                                    {MODE_HELP[mode]}
-                                  </div>
-                                </div>
-                              </GuxListItem>
-                            ))}
-                          </GuxList>
-                        )}
-                      </div>
-                    </GuxPopup>
-                  </div>
-                </BubbleMenu>
-              </>
-            ) : null}
+            {editor ? <EditorContent editor={editor} /> : null}
+          </div>
+          <div className="emailRectFullPolishAction">
+            <GuxButton
+              accent="primary"
+              disabled={isPolishing}
+              onClick={() => runRefineFullText("professional")}
+            >
+              Polish Entire Draft
+            </GuxButton>
           </div>
           <div className="emailRectHint">{helperText}</div>
         </div>
@@ -271,4 +168,3 @@ export function EmailRect() {
     </GuxCard>
   );
 }
-

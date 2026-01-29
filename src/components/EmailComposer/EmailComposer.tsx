@@ -2,11 +2,18 @@ import { useMemo, useRef, useState } from "react";
 import { Sparkles, ChevronDown } from "lucide-react";
 import { polishEmail, type PolishMode } from "../../lib/gemini/polishEmail";
 import { DiffReviewModal } from "./DiffReviewModal";
+import sampleEmailsData from "../../data/sample-emails.json";
 
 type PendingReview = {
   mode: PolishMode;
   original: string;
   polished: string;
+};
+
+type SampleEmail = {
+  subject: string;
+  agent_email: string;
+  content: string;
 };
 
 const MODE_LABEL: Record<PolishMode, string> = {
@@ -16,17 +23,26 @@ const MODE_LABEL: Record<PolishMode, string> = {
   concise: "Concise",
 };
 
+// Helper function to get a random email
+function getRandomEmail(emails: SampleEmail[]): { email: SampleEmail; index: number } {
+  const randomIndex = Math.floor(Math.random() * emails.length);
+  return { email: emails[randomIndex]!, index: randomIndex };
+}
+
 export function EmailComposer() {
-  const [text, setText] = useState<string>(() => {
-    return `Hi Alex,
-
-Just wanted to follow up on the proposal we discussed on Jan 10. Here’s the link: https://example.com/proposal
-
-Can we finalize by Friday?
-
-Thanks,
-Ray`;
-  });
+  const sampleEmails = sampleEmailsData as SampleEmail[];
+  
+  // Compute initial email once using a ref to ensure it's the same across all useState calls
+  const initialEmailRef = useRef<{ email: SampleEmail; index: number } | null>(null);
+  if (!initialEmailRef.current) {
+    initialEmailRef.current = getRandomEmail(sampleEmails);
+  }
+  const initialEmail = initialEmailRef.current;
+  
+  const [selectedEmailIndex, setSelectedEmailIndex] = useState<number | null>(initialEmail.index);
+  const [subject, setSubject] = useState<string>(initialEmail.email.subject);
+  const [agentEmail, setAgentEmail] = useState<string>(initialEmail.email.agent_email);
+  const [text, setText] = useState<string>(initialEmail.email.content);
   const [aiUndoStack, setAiUndoStack] = useState<string[]>([]);
   const [isPolishing, setIsPolishing] = useState(false);
   const [pendingReview, setPendingReview] = useState<PendingReview | null>(null);
@@ -38,6 +54,16 @@ Ray`;
 
   const canAiUndo = aiUndoStack.length > 0;
   const canRefineSelection = text.trim().length > 0 && !isPolishing;
+
+  function loadSampleEmail(index: number) {
+    if (index < 0 || index >= sampleEmails.length) return;
+    const email = sampleEmails[index];
+    setSubject(email.subject);
+    setAgentEmail(email.agent_email);
+    setText(email.content);
+    setSelectedEmailIndex(index);
+    setAiUndoStack([]); // Clear undo stack when loading new email
+  }
 
   const helperText = useMemo(() => {
     if (isPolishing) return "Refining with Gemini…";
@@ -97,6 +123,26 @@ Ray`;
         </div>
 
         <div className="row">
+          <select
+            className="btn"
+            value={selectedEmailIndex ?? ""}
+            onChange={(e) => {
+              const index = e.target.value === "" ? null : parseInt(e.target.value, 10);
+              if (index !== null) {
+                loadSampleEmail(index);
+              } else {
+                setSelectedEmailIndex(null);
+              }
+            }}
+            style={{ marginRight: 8, padding: "6px 12px" }}
+          >
+            <option value="">Load sample email...</option>
+            {sampleEmails.map((email, index) => (
+              <option key={index} value={index}>
+                {email.subject}
+              </option>
+            ))}
+          </select>
           <button className="btn" onClick={undoAi} disabled={!canAiUndo || isPolishing} type="button">
             Undo AI
           </button>
@@ -104,6 +150,45 @@ Ray`;
       </div>
 
       <div className="composerBody">
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ display: "block", marginBottom: 4, fontSize: "14px", fontWeight: 600 }}>
+            Subject
+          </label>
+          <input
+            type="text"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            placeholder="Email subject"
+            style={{
+              width: "100%",
+              padding: "8px 12px",
+              border: "1px solid #ccc",
+              borderRadius: "4px",
+              fontSize: "14px",
+            }}
+          />
+        </div>
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ display: "block", marginBottom: 4, fontSize: "14px", fontWeight: 600 }}>
+            Agent Email
+          </label>
+          <input
+            type="email"
+            value={agentEmail}
+            onChange={(e) => setAgentEmail(e.target.value)}
+            placeholder="agent@example.com"
+            style={{
+              width: "100%",
+              padding: "8px 12px",
+              border: "1px solid #ccc",
+              borderRadius: "4px",
+              fontSize: "14px",
+            }}
+          />
+        </div>
+        <label style={{ display: "block", marginBottom: 4, fontSize: "14px", fontWeight: 600 }}>
+          Email Content
+        </label>
         <textarea
           ref={textareaRef}
           className="sparkPlainTextarea"
