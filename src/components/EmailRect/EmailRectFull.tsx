@@ -26,7 +26,7 @@ const MODE_LABEL: Record<PolishMode, string> = {
 
 export function EmailRectFull() {
   const [to, setTo] = useState("alex@example.com");
-  const [subject, setSubject] = useState("Following up on proposal");
+  const [subject, setSubject] = useState("Dispute ID #VCB-99821-X");
 
   const [aiUndoStack, setAiUndoStack] = useState<string[]>([]);
   const [isPolishing, setIsPolishing] = useState(false);

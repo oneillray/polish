@@ -36,7 +36,7 @@ const MODE_HELP: Record<PolishMode, string> = {
 
 export function EmailRectSelection() {
   const [to, setTo] = useState("alex@example.com");
-  const [subject, setSubject] = useState("Following up on proposal");
+  const [subject, setSubject] = useState("Dispute ID #VCB-99821-X");
 
   const [aiUndoStack, setAiUndoStack] = useState<string[]>([]);
   const [isPolishing, setIsPolishing] = useState(false);
@@ -53,10 +53,14 @@ export function EmailRectSelection() {
         placeholder: "Write your email here...",
       }),
     ],
-    content: `<p>Hi Alex,</p>
-<p>Just wanted to follow up on the proposal we discussed on Jan 10. Here's the link: https://example.com/proposal</p>
-<p>Can we finalize by Friday?</p>
-<p>Thanks,<br/>Ray</p>`,
+    content: `<p>Dear Customer</p>
+
+        <p>I am writing to provide an update on your Dispute Case ID: #VCB-99821-X. Our merchant relations team has received a response from the vendor regarding the disputed amount of <$85.50.</p>
+
+        <p>We have issued a provisional credit to your account #882910443. This credit will become permanent pending the final 30-day review period.</p>
+        
+            <p>Regards,<br>
+            John Doe</p>`,
     editorProps: {
       attributes: {
         class: "sparkEditorProse",
