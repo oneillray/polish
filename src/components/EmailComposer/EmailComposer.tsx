@@ -43,17 +43,29 @@ export function EmailComposer() {
   const [subject, setSubject] = useState<string>(initialEmail.email.subject);
   const [agentEmail, setAgentEmail] = useState<string>(initialEmail.email.agent_email);
   const [text, setText] = useState<string>(initialEmail.email.content);
+  const [refinementCount, setRefinementCount] = useState(0);
   const [aiUndoStack, setAiUndoStack] = useState<string[]>([]);
   const [isPolishing, setIsPolishing] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [regenerateError, setRegenerateError] = useState<string | null>(null);
   const [pendingReview, setPendingReview] = useState<PendingReview | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [bubbleOpen, setBubbleOpen] = useState(false);
+  const [selectionRange, setSelectionRange] = useState({ start: 0, end: 0 });
   const selectionRef = useRef<{ from: number; to: number } | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const canAiUndo = aiUndoStack.length > 0;
-  const canRefineSelection = text.trim().length > 0 && !isPolishing;
+  const refinementsRemaining = Math.max(0, 3 - refinementCount);
+  const canRefine = refinementCount < 3;
+  const selectionLength = text.slice(selectionRange.start, selectionRange.end).length;
+  const selectionTrimmed = text.slice(selectionRange.start, selectionRange.end).trim().length;
+  const canRefineSelection =
+    canRefine &&
+    !isPolishing &&
+    selectionLength >= 50 &&
+    selectionTrimmed > 0;
 
   function loadSampleEmail(index: number) {
     if (index < 0 || index >= sampleEmails.length) return;
@@ -94,11 +106,30 @@ export function EmailComposer() {
     }
   }
 
+  async function handleRegenerate() {
+    if (!pendingReview || !selectionRef.current) return;
+    const range = selectionRef.current;
+    setRegenerateError(null);
+    setIsRegenerating(true);
+    try {
+      const selectedText = text.slice(range.from, range.to);
+      const polished = await polishEmail(selectedText, pendingReview.mode);
+      setRefinementCount((c) => Math.min(c + 1, 3));
+      setPendingReview({ ...pendingReview, polished });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Failed to refine text.";
+      setRegenerateError(message);
+    } finally {
+      setIsRegenerating(false);
+    }
+  }
+
   function acceptPolish() {
     if (!pendingReview) return;
     const range = selectionRef.current;
     if (!range) return;
 
+    setRefinementCount((c) => Math.min(c + 1, 3));
     setAiUndoStack((s) => [...s, text]);
     const next = text.slice(0, range.from) + pendingReview.polished + text.slice(range.to);
     setText(next);
@@ -194,6 +225,11 @@ export function EmailComposer() {
           className="sparkPlainTextarea"
           value={text}
           onChange={(e) => setText(e.target.value)}
+          onSelect={() => {
+            const el = textareaRef.current;
+            if (el)
+              setSelectionRange({ start: el.selectionStart, end: el.selectionEnd });
+          }}
           placeholder="Write your email here..."
         />
 
@@ -205,7 +241,13 @@ export function EmailComposer() {
             disabled={!canRefineSelection}
             aria-haspopup="menu"
             aria-expanded={bubbleOpen}
-            title="AI polish selection"
+            title={
+              !canRefine
+                ? "Refinement limit reached"
+                : selectionLength < 50 || selectionTrimmed === 0
+                  ? "Select at least 50 characters to use AI Refine"
+                  : "AI polish selection"
+            }
           >
             <Sparkles size={16} />
             <ChevronDown size={14} />
@@ -235,17 +277,39 @@ export function EmailComposer() {
         </div>
         <div className="hint" style={{ marginTop: 10 }}>
           {helperText}
+          {canRefine && (
+            <span className="refinementsRemaining">
+              {" "}({refinementsRemaining} refinement{refinementsRemaining !== 1 ? "s" : ""} remaining)
+            </span>
+          )}
         </div>
       </div>
 
-      {pendingReview ? (
+      {pendingReview && selectionRef.current ? (
         <DiffReviewModal
           title={`Review polish: ${MODE_LABEL[pendingReview.mode]}`}
-          original={pendingReview.original}
-          polished={pendingReview.polished}
+          fullTextBefore={text}
+          fullTextAfter={
+            text.slice(0, selectionRef.current.from) +
+            pendingReview.polished +
+            text.slice(selectionRef.current.to)
+          }
+          highlightStartBefore={selectionRef.current.from}
+          highlightEndBefore={selectionRef.current.to}
+          highlightStartAfter={selectionRef.current.from}
+          highlightEndAfter={selectionRef.current.from + pendingReview.polished.length}
           onCancel={() => setPendingReview(null)}
           onApply={acceptPolish}
           applyLabel="Accept"
+          refinementsRemaining={refinementsRemaining}
+          refinementsTotal={3}
+          refinementType={pendingReview.mode}
+          isRegenerating={isRegenerating}
+          onRegenerate={handleRegenerate}
+          onFeedback={(payload) => {
+            console.info("Refine feedback", payload);
+          }}
+          regenerateError={regenerateError}
         />
       ) : null}
     </section>

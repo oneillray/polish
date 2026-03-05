@@ -38,10 +38,16 @@ export function EmailRectSelection() {
   const [to, setTo] = useState("alex@example.com");
   const [subject, setSubject] = useState("Dispute ID #VCB-99821-X");
 
+  const [refinementCount, setRefinementCount] = useState(0);
   const [aiUndoStack, setAiUndoStack] = useState<string[]>([]);
   const [isPolishing, setIsPolishing] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [regenerateError, setRegenerateError] = useState<string | null>(null);
   const [pendingReview, setPendingReview] = useState<PendingReview | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const refinementsRemaining = Math.max(0, 3 - refinementCount);
+  const canRefine = refinementCount < 3;
 
   const selectionRef = useRef<{ from: number; to: number } | null>(null);
   const [aiMenuOpen, setAiMenuOpen] = useState(false);
@@ -107,12 +113,32 @@ export function EmailRectSelection() {
     }
   }
 
+  async function handleRegenerate() {
+    if (!editor || !pendingReview) return;
+    const range = selectionRef.current;
+    if (!range) return;
+    setRegenerateError(null);
+    setIsRegenerating(true);
+    try {
+      const selectedText = editor.state.doc.textBetween(range.from, range.to, "\n\n");
+      const polished = await polishEmail(selectedText, pendingReview.mode);
+      setRefinementCount((c) => Math.min(c + 1, 3));
+      setPendingReview({ ...pendingReview, polished });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Failed to refine text.";
+      setRegenerateError(message);
+    } finally {
+      setIsRegenerating(false);
+    }
+  }
+
   function acceptPolish() {
     if (!editor) return;
     if (!pendingReview) return;
     const range = selectionRef.current;
     if (!range) return;
 
+    setRefinementCount((c) => Math.min(c + 1, 3));
     setAiUndoStack((s) => [...s, editor.getHTML()]);
     editor
       .chain()
@@ -172,15 +198,23 @@ export function EmailRectSelection() {
                 <BubbleMenu
                   editor={editor}
                   tippyOptions={{ duration: 120 }}
-                  shouldShow={({ state }) => state.selection.from !== state.selection.to}
+                  shouldShow={({ state }) => {
+                    if (!canRefine) return false;
+                    const { from, to } = state.selection;
+                    if (from === to) return false;
+                    const selected = state.doc.textBetween(from, to, "\n");
+                    if (selected.trim().length === 0) return false;
+                    return selected.length >= 50;
+                  }}
                 >
                   <div className="emailRectBubble">
                     <GuxPopup expanded={aiMenuOpen} placement="bottom-end" exceed-target-width>
                       <div slot="target">
                         <GuxButton
                           accent="secondary"
-                          disabled={isPolishing}
+                          disabled={isPolishing || !canRefine}
                           onClick={() => setAiMenuOpen((v) => !v)}
+                          title={!canRefine ? "Refinement limit reached" : undefined}
                         >
                           Polish
                         </GuxButton>
@@ -215,20 +249,49 @@ export function EmailRectSelection() {
               </>
             ) : null}
           </div>
-          <div className="emailRectHint">{helperText}</div>
+          <div className="emailRectHint">
+            {helperText}
+            {canRefine && (
+              <span className="refinementsRemaining">
+                {" "}({refinementsRemaining} refinement{refinementsRemaining !== 1 ? "s" : ""} remaining)
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
-      {pendingReview ? (
-        <DiffReviewModal
-          title={`Review polish: ${MODE_LABEL[pendingReview.mode]}`}
-          original={pendingReview.original}
-          polished={pendingReview.polished}
-          onCancel={() => setPendingReview(null)}
-          onApply={acceptPolish}
-          applyLabel="Accept"
-        />
-      ) : null}
+      {pendingReview && editor && selectionRef.current ? (() => {
+        const range = selectionRef.current;
+        const fullBefore = editor.state.doc.textContent ?? "";
+        const charStart = editor.state.doc.textBetween(0, range.from, "\n").length;
+        const charEnd = editor.state.doc.textBetween(0, range.to, "\n").length;
+        const fullAfter =
+          fullBefore.slice(0, charStart) + pendingReview.polished + fullBefore.slice(charEnd);
+        return (
+          <DiffReviewModal
+            title={`Review polish: ${MODE_LABEL[pendingReview.mode]}`}
+            fullTextBefore={fullBefore}
+            fullTextAfter={fullAfter}
+            highlightStartBefore={charStart}
+            highlightEndBefore={charEnd}
+            highlightStartAfter={charStart}
+            highlightEndAfter={charStart + pendingReview.polished.length}
+            onCancel={() => setPendingReview(null)}
+            onApply={acceptPolish}
+            applyLabel="Accept"
+            refinementsRemaining={refinementsRemaining}
+            refinementsTotal={3}
+            refinementType={pendingReview.mode}
+            isRegenerating={isRegenerating}
+            onRegenerate={handleRegenerate}
+            onFeedback={(payload) => {
+              /* TODO: send to analytics/backend */
+              console.info("Refine feedback", payload);
+            }}
+            regenerateError={regenerateError}
+          />
+        );
+      })() : null}
     </GuxCard>
   );
 }

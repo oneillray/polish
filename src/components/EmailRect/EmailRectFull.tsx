@@ -28,10 +28,16 @@ export function EmailRectFull() {
   const [to, setTo] = useState("alex@example.com");
   const [subject, setSubject] = useState("Dispute ID #VCB-99821-X");
 
+  const [refinementCount, setRefinementCount] = useState(0);
   const [aiUndoStack, setAiUndoStack] = useState<string[]>([]);
   const [isPolishing, setIsPolishing] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [regenerateError, setRegenerateError] = useState<string | null>(null);
   const [pendingReview, setPendingReview] = useState<PendingReview | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const refinementsRemaining = Math.max(0, 3 - refinementCount);
+  const canRefine = refinementCount < 3;
 
   const selectionRef = useRef<{ from: number; to: number } | null>(null);
 
@@ -54,6 +60,9 @@ export function EmailRectFull() {
   });
 
   const canAiUndo = aiUndoStack.length > 0;
+  const fullText = editor?.state.doc.textContent ?? "";
+  const canPolishFull =
+    canRefine && fullText.length >= 50 && fullText.trim().length > 0;
 
   const helperText = useMemo(() => {
     if (isPolishing) return "Refining with AI…";
@@ -64,7 +73,7 @@ export function EmailRectFull() {
   async function runRefineFullText(mode: PolishMode) {
     if (!editor) return;
     const text = editor.state.doc.textContent ?? "";
-    if (!text.trim()) return;
+    if (!text.trim() || text.length < 50) return;
 
     setError(null);
     setIsPolishing(true);
@@ -81,12 +90,30 @@ export function EmailRectFull() {
     }
   }
 
+  async function handleRegenerate() {
+    if (!editor || !pendingReview) return;
+    setRegenerateError(null);
+    setIsRegenerating(true);
+    try {
+      const text = editor.state.doc.textContent ?? "";
+      const polished = await polishEmail(text, pendingReview.mode);
+      setRefinementCount((c) => Math.min(c + 1, 3));
+      setPendingReview({ ...pendingReview, polished });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Failed to refine text.";
+      setRegenerateError(message);
+    } finally {
+      setIsRegenerating(false);
+    }
+  }
+
   function acceptPolish() {
     if (!editor) return;
     if (!pendingReview) return;
     const range = selectionRef.current;
     if (!range) return;
 
+    setRefinementCount((c) => Math.min(c + 1, 3));
     setAiUndoStack((s) => [...s, editor.getHTML()]);
     editor
       .chain()
@@ -145,24 +172,51 @@ export function EmailRectFull() {
           <div className="emailRectFullPolishAction">
             <GuxButton
               accent="primary"
-              disabled={isPolishing}
+              disabled={isPolishing || !canPolishFull}
               onClick={() => runRefineFullText("professional")}
+              title={
+                !canRefine
+                  ? "Refinement limit reached"
+                  : fullText.length < 50
+                    ? "Document must have at least 50 characters to use AI Refine"
+                    : undefined
+              }
             >
               Polish Entire Draft
             </GuxButton>
           </div>
-          <div className="emailRectHint">{helperText}</div>
+          <div className="emailRectHint">
+            {helperText}
+            {canRefine && (
+              <span className="refinementsRemaining">
+                {" "}({refinementsRemaining} refinement{refinementsRemaining !== 1 ? "s" : ""} remaining)
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
       {pendingReview ? (
         <DiffReviewModal
           title={`Review polish: ${MODE_LABEL[pendingReview.mode]}`}
-          original={pendingReview.original}
-          polished={pendingReview.polished}
+          fullTextBefore={pendingReview.original}
+          fullTextAfter={pendingReview.polished}
+          highlightStartBefore={0}
+          highlightEndBefore={pendingReview.original.length}
+          highlightStartAfter={0}
+          highlightEndAfter={pendingReview.polished.length}
           onCancel={() => setPendingReview(null)}
           onApply={acceptPolish}
           applyLabel="Accept"
+          refinementsRemaining={refinementsRemaining}
+          refinementsTotal={3}
+          refinementType={pendingReview.mode}
+          isRegenerating={isRegenerating}
+          onRegenerate={handleRegenerate}
+          onFeedback={(payload) => {
+            console.info("Refine feedback", payload);
+          }}
+          regenerateError={regenerateError}
         />
       ) : null}
     </GuxCard>
