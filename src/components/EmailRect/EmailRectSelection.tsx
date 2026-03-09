@@ -11,6 +11,11 @@ import {
   GuxButton,
 } from "genesys-spark-components-react";
 import { polishEmail, type PolishMode } from "../../lib/gemini/polishEmail";
+import {
+  SuggestionBar,
+  SuggestionReviewModal,
+  useSuggestions,
+} from "../../features/reply-suggestions";
 import { DiffReviewModal } from "../EmailComposer/DiffReviewModal";
 import { SparkToolbar } from "../EmailComposer/SparkToolbar";
 
@@ -76,6 +81,44 @@ export function EmailRectSelection() {
 
   const canAiUndo = aiUndoStack.length > 0;
 
+  const suggestionContext = useMemo(
+    () => ({
+      incomingEmail: editor?.state.doc.textContent ?? "",
+      threadHistory: [],
+      agentPastReplies: undefined,
+      crmData: undefined,
+    }),
+    [editor?.state.doc.textContent]
+  );
+  const {
+    state: suggestionState,
+    onComposeFocus,
+    selectSuggestionForReview,
+    acceptSuggestion,
+    rejectSuggestion,
+    regenerateSuggestion,
+    pendingReview: suggestionPendingReview,
+    isRegenerating: suggestionRegenerating,
+    regenerateError: suggestionRegenerateError,
+    dismiss: dismissSuggestions,
+    refresh: refreshSuggestions,
+  } = useSuggestions(subject || "default", suggestionContext);
+
+  const handleSelectSuggestion = (id: string) => {
+    selectSuggestionForReview(id);
+  };
+
+  const handleAcceptSuggestion = () => {
+    if (!editor) return;
+    acceptSuggestion((text) => {
+      const html = text
+        .split(/\n\n+/)
+        .map((p) => `<p>${p.replace(/\n/g, "<br>")}</p>`)
+        .join("");
+      editor.commands.setContent(html, false);
+    });
+  };
+
   const helperText = useMemo(() => {
     if (isPolishing) return "Refining with AI…";
     if (error) return error;
@@ -84,13 +127,20 @@ export function EmailRectSelection() {
 
   useEffect(() => {
     if (!editor) return;
-    // Close the AI menu as selection changes (prevents stale anchoring).
     const handler = () => setAiMenuOpen(false);
     editor.on("selectionUpdate", handler);
     return () => {
       editor.off("selectionUpdate", handler);
     };
   }, [editor]);
+
+  useEffect(() => {
+    if (!editor || !onComposeFocus) return;
+    editor.on("focus", onComposeFocus);
+    return () => {
+      editor.off("focus", onComposeFocus);
+    };
+  }, [editor, onComposeFocus]);
 
   async function runRefineSelection(mode: PolishMode) {
     if (!editor) return;
@@ -191,6 +241,12 @@ export function EmailRectSelection() {
         </div>
 
         <div className="emailRectBody">
+          <SuggestionBar
+            state={suggestionState}
+            onSelectSuggestion={handleSelectSuggestion}
+            onDismiss={dismissSuggestions}
+            onRefresh={refreshSuggestions}
+          />
           <div className="sparkEditorShell">
             {editor ? (
               <>
@@ -292,6 +348,18 @@ export function EmailRectSelection() {
           />
         );
       })() : null}
+
+      {suggestionPendingReview && editor ? (
+        <SuggestionReviewModal
+          suggestion={suggestionPendingReview}
+          currentDraftText={editor.state.doc.textContent ?? ""}
+          onAccept={handleAcceptSuggestion}
+          onReject={rejectSuggestion}
+          onRegenerate={regenerateSuggestion}
+          isRegenerating={suggestionRegenerating}
+          regenerateError={suggestionRegenerateError}
+        />
+      ) : null}
     </GuxCard>
   );
 }

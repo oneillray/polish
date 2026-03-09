@@ -162,12 +162,121 @@ function groqPolishMiddleware(apiKey: string | undefined): Plugin {
   };
 }
 
+function groqSuggestionsMiddleware(apiKey: string | undefined): Plugin {
+  return {
+    name: "groq-suggestions-middleware",
+    configureServer(server) {
+      server.middlewares.use("/api/suggestions", async (req, res) => {
+        if (req.method !== "POST") {
+          res.statusCode = 405;
+          res.setHeader("Content-Type", "application/json");
+          res.end(JSON.stringify({ error: "Method Not Allowed" }));
+          return;
+        }
+
+        if (!apiKey) {
+          res.statusCode = 500;
+          res.setHeader("Content-Type", "application/json");
+          res.end(
+            JSON.stringify({
+              error:
+                "Missing Groq API key. Set GROQ_API_KEY (recommended) or VITE_GROQ_API_KEY in .env and restart the dev server.",
+            }),
+          );
+          return;
+        }
+
+        let raw = "";
+        req.on("data", (chunk) => {
+          raw += String(chunk);
+        });
+
+        req.on("end", async () => {
+          try {
+            const parsed = (raw ? JSON.parse(raw) : {}) as {
+              system?: string;
+              user?: string;
+            };
+
+            const system = typeof parsed.system === "string" ? parsed.system : "";
+            const user = typeof parsed.user === "string" ? parsed.user : "";
+
+            if (!system.trim() || !user.trim()) {
+              res.statusCode = 400;
+              res.setHeader("Content-Type", "application/json");
+              res.end(JSON.stringify({ error: "Missing system or user message." }));
+              return;
+            }
+
+            const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiKey}`,
+              },
+              body: JSON.stringify({
+                model: "llama-3.3-70b-versatile",
+                temperature: 0.2,
+                top_p: 0.9,
+                max_tokens: 2048,
+                messages: [
+                  { role: "system", content: system },
+                  { role: "user", content: user },
+                ],
+              }),
+            });
+
+            if (!groqRes.ok) {
+              const details = await groqRes.text().catch(() => "");
+              res.statusCode = 502;
+              res.setHeader("Content-Type", "application/json");
+              res.end(
+                JSON.stringify({
+                  error: `Groq request failed (${groqRes.status}).`,
+                  details: details.slice(0, 1000),
+                }),
+              );
+              return;
+            }
+
+            const data = (await groqRes.json()) as {
+              choices?: Array<{ message?: { content?: string } }>;
+            };
+            const content = data.choices?.[0]?.message?.content?.trim() ?? "";
+            if (!content) {
+              res.statusCode = 502;
+              res.setHeader("Content-Type", "application/json");
+              res.end(JSON.stringify({ error: "Groq returned an empty response." }));
+              return;
+            }
+
+            res.statusCode = 200;
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ content }));
+          } catch (e) {
+            res.statusCode = 500;
+            res.setHeader("Content-Type", "application/json");
+            res.end(
+              JSON.stringify({
+                error: e instanceof Error ? e.message : "Server error",
+              }),
+            );
+          }
+        });
+      });
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const apiKey = env.GROQ_API_KEY || env.VITE_GROQ_API_KEY || process.env.GROQ_API_KEY;
 
   return {
-    plugins: [react(), groqPolishMiddleware(apiKey)],
+    plugins: [react(), groqPolishMiddleware(apiKey), groqSuggestionsMiddleware(apiKey)],
+    test: {
+      environment: "jsdom",
+    },
     build: {
       rollupOptions: {
         input: {

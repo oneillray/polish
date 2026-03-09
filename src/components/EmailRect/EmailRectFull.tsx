@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -8,6 +8,11 @@ import {
   GuxButton,
 } from "genesys-spark-components-react";
 import { polishEmail, type PolishMode } from "../../lib/gemini/polishEmail";
+import {
+  SuggestionBar,
+  SuggestionReviewModal,
+  useSuggestions,
+} from "../../features/reply-suggestions";
 import { DiffReviewModal } from "../EmailComposer/DiffReviewModal";
 import { SparkToolbar } from "../EmailComposer/SparkToolbar";
 
@@ -63,6 +68,44 @@ export function EmailRectFull() {
   const fullText = editor?.state.doc.textContent ?? "";
   const canPolishFull =
     canRefine && fullText.length >= 50 && fullText.trim().length > 0;
+
+  const suggestionContext = useMemo(
+    () => ({
+      incomingEmail: fullText,
+      threadHistory: [],
+      agentPastReplies: undefined,
+      crmData: undefined,
+    }),
+    [fullText]
+  );
+  const {
+    state: suggestionState,
+    onComposeFocus,
+    selectSuggestionForReview,
+    acceptSuggestion,
+    rejectSuggestion,
+    regenerateSuggestion,
+    pendingReview: suggestionPendingReview,
+    isRegenerating: suggestionRegenerating,
+    regenerateError: suggestionRegenerateError,
+    dismiss: dismissSuggestions,
+    refresh: refreshSuggestions,
+  } = useSuggestions(subject || "default", suggestionContext);
+
+  const handleSelectSuggestion = (id: string) => {
+    selectSuggestionForReview(id);
+  };
+
+  const handleAcceptSuggestion = () => {
+    if (!editor) return;
+    acceptSuggestion((text) => {
+      const html = text
+        .split(/\n\n+/)
+        .map((p) => `<p>${p.replace(/\n/g, "<br>")}</p>`)
+        .join("");
+      editor.commands.setContent(html, false);
+    });
+  };
 
   const helperText = useMemo(() => {
     if (isPolishing) return "Refining with AI…";
@@ -123,6 +166,14 @@ export function EmailRectFull() {
     setPendingReview(null);
   }
 
+  useEffect(() => {
+    if (!editor || !onComposeFocus) return;
+    editor.on("focus", onComposeFocus);
+    return () => {
+      editor.off("focus", onComposeFocus);
+    };
+  }, [editor, onComposeFocus]);
+
   function undoAi() {
     if (!editor) return;
     setAiUndoStack((s) => {
@@ -166,6 +217,12 @@ export function EmailRectFull() {
         </div>
 
         <div className="emailRectBody">
+          <SuggestionBar
+            state={suggestionState}
+            onSelectSuggestion={handleSelectSuggestion}
+            onDismiss={dismissSuggestions}
+            onRefresh={refreshSuggestions}
+          />
           <div className="sparkEditorShell">
             {editor ? <EditorContent editor={editor} /> : null}
           </div>
@@ -217,6 +274,18 @@ export function EmailRectFull() {
             console.info("Refine feedback", payload);
           }}
           regenerateError={regenerateError}
+        />
+      ) : null}
+
+      {suggestionPendingReview && editor ? (
+        <SuggestionReviewModal
+          suggestion={suggestionPendingReview}
+          currentDraftText={editor.state.doc.textContent ?? ""}
+          onAccept={handleAcceptSuggestion}
+          onReject={rejectSuggestion}
+          onRegenerate={regenerateSuggestion}
+          isRegenerating={suggestionRegenerating}
+          regenerateError={suggestionRegenerateError}
         />
       ) : null}
     </GuxCard>
