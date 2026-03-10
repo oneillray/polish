@@ -1,13 +1,26 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { MockEmail, ThreadState } from "./emailThread.types";
-import { ADDITIONAL_EMAILS, MOCK_THREAD } from "./mockThread";
+import type { ScenarioId } from "./mockThread";
+import { SCENARIOS } from "./mockThread";
 
-export function useThreadState() {
-  const [emails, setEmails] = useState<MockEmail[]>(MOCK_THREAD);
+function getScenario(scenarioId: ScenarioId) {
+  return SCENARIOS.find((s) => s.id === scenarioId) ?? SCENARIOS[0]!;
+}
+
+export function useThreadState(scenarioId: ScenarioId = "wire") {
+  const scenario = getScenario(scenarioId);
+  const [emails, setEmails] = useState<MockEmail[]>(() => scenario.initial);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(
-    () => new Set([MOCK_THREAD[MOCK_THREAD.length - 1]?.id]),
+    () => new Set([scenario.initial[scenario.initial.length - 1]?.id]),
   );
   const [additionalEmailIndex, setAdditionalEmailIndex] = useState(0);
+
+  useEffect(() => {
+    const next = getScenario(scenarioId);
+    setEmails(next.initial);
+    setExpandedIds(new Set([next.initial[next.initial.length - 1]?.id]));
+    setAdditionalEmailIndex(0);
+  }, [scenarioId]);
 
   const toggleExpand = useCallback((id: string) => {
     setExpandedIds((prev) => {
@@ -22,8 +35,8 @@ export function useThreadState() {
   }, []);
 
   const addNextEmail = useCallback(() => {
-    const next =
-      ADDITIONAL_EMAILS[additionalEmailIndex % ADDITIONAL_EMAILS.length]!;
+    const list = getScenario(scenarioId).additional;
+    const next = list[additionalEmailIndex % list.length]!;
     setEmails((prev) => [...prev, next]);
     setExpandedIds((prev) => {
       const nextIds = new Set(prev);
@@ -31,7 +44,7 @@ export function useThreadState() {
       return nextIds;
     });
     setAdditionalEmailIndex((i) => i + 1);
-  }, [additionalEmailIndex]);
+  }, [additionalEmailIndex, scenarioId]);
 
   const threadState: ThreadState = {
     emails,

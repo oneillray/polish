@@ -2,12 +2,13 @@ import { useMemo } from "react";
 import { ComposeArea } from "./ComposeArea";
 import { EmailThread } from "./EmailThread";
 import { threadToSuggestionContext } from "./emailThread.utils";
+import type { ScenarioId } from "./mockThread";
 import { useThreadState } from "./useThreadState";
 
 const DEMO_THREAD_ID = "demo-thread-IWT-88423";
 
-export function EmailThreadDemo() {
-  const { threadState, toggleExpand, addNextEmail } = useThreadState();
+export function EmailThreadDemo({ scenarioId }: { scenarioId?: ScenarioId }) {
+  const { threadState, toggleExpand, addNextEmail } = useThreadState(scenarioId ?? "wire");
 
   const suggestionContext = useMemo(
     () => threadToSuggestionContext(threadState.emails),

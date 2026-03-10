@@ -230,3 +230,188 @@ Customer Support — First National Bank`,
   },
 ];
 
+export const SCENARIO_FRAUD: MockEmail[] = [
+  {
+    id: "f-email-1",
+    from: { name: "Marcus Bellamy", email: "marcus.bellamy@outlook.com", role: "customer" },
+    to: { name: "Support Team", email: "support@firstnationalbank.com", role: "agent" },
+    subject: "Suspicious transactions on my account — please help",
+    timestamp: "2026-03-08T07:30:00Z",
+    body: `Hi,
+
+I woke up this morning to three transaction notifications I definitely didn't make:
+
+  1. £349.99 — "ELECTRONIX STORE BUDAPEST" — 07:02 AM
+  2. £89.00  — "STREAMVAULT PRO ANNUAL"    — 07:08 AM
+  3. £212.50 — "ELECTRONIX STORE BUDAPEST" — 07:11 AM
+
+I'm in Manchester. I have not made any purchases in Budapest and I've never heard of StreamVault Pro. My card is physically in my wallet in front of me.
+
+Total: £651.49 taken from my account in 9 minutes.
+
+I need these reversed and my card cancelled immediately. My card ending in 4471.
+
+Very concerned,
+Marcus Bellamy`,
+  },
+  {
+    id: "f-email-2",
+    from: { name: "Aisha Okonkwo", email: "a.okonkwo@firstnationalbank.com", role: "agent" },
+    to: { name: "Marcus Bellamy", email: "marcus.bellamy@outlook.com", role: "customer" },
+    subject: "Re: Suspicious transactions on my account — please help",
+    timestamp: "2026-03-08T08:05:00Z",
+    body: `Dear Mr. Bellamy,
+
+Thank you for contacting us so quickly — acting fast is exactly the right thing to do in this situation.
+
+I've taken the following immediate actions on your account:
+
+1. Card ending 4471 has been blocked. No further transactions can be processed on it.
+2. All three transactions you listed have been flagged as disputed and raised with our fraud investigations team.
+3. A provisional credit of £651.49 has been applied to your account while the investigation is underway.
+
+You are not liable for these charges. Our fraud team will investigate and the provisional credit will be made permanent once the investigation concludes, typically within 5–10 business days.
+
+I'd like to ask a few security questions to understand how this may have happened. In the last 48 hours, have you:
+- Used your card on any unfamiliar websites or apps?
+- Received any unexpected texts or emails asking you to verify your card details?
+- Used your card at an ATM you don't normally use?
+
+Your answers will help our fraud team trace the source.
+
+A new card will be dispatched to your registered address and should arrive within 3–5 business days. You can manage your account digitally in the meantime.
+
+Please don't hesitate to call our fraud line directly if you'd like to speak to someone: 0800 XXX XXXX.
+
+Regards,
+Aisha Okonkwo
+Fraud & Security Team — First National Bank`,
+  },
+  {
+    id: "f-email-3",
+    from: { name: "Marcus Bellamy", email: "marcus.bellamy@outlook.com", role: "customer" },
+    to: { name: "Support Team", email: "support@firstnationalbank.com", role: "agent" },
+    subject: "Re: Suspicious transactions on my account — please help",
+    timestamp: "2026-03-08T09:15:00Z",
+    body: `Aisha,
+
+Thanks for the fast response. Good to know the card is blocked.
+
+To answer your questions:
+
+- Websites: I did buy something from a cycling gear website called "VeloDeals" last Thursday. I'd never used them before but they had a good price on a helmet. Paid by card.
+- Texts/emails: I did get a text on Thursday evening saying my delivery was held and I needed to re-enter my card details to release it. I thought it was from the cycling site so I filled in my details. Looking at it now it might have been a scam.
+- ATMs: Only my usual one at Tesco.
+
+The text link went to something like "delivery-reschedule-uk.com" — I'm guessing that's the problem?
+
+Marcus`,
+  },
+  {
+    id: "f-email-4",
+    from: { name: "Aisha Okonkwo", email: "a.okonkwo@firstnationalbank.com", role: "agent" },
+    to: { name: "Marcus Bellamy", email: "marcus.bellamy@outlook.com", role: "customer" },
+    subject: "Re: Suspicious transactions on my account — please help",
+    timestamp: "2026-03-08T10:40:00Z",
+    body: `Dear Mr. Bellamy,
+
+Thank you for sharing that — it's very helpful and, I have to say, very common. What you've described is a classic smishing (SMS phishing) attack. The text message and fake delivery page were designed specifically to harvest card details. You did nothing wrong — these scams are sophisticated and catch many people out.
+
+This information has been passed to our fraud team and will support the investigation and the permanent refund of your £651.49.
+
+A few things I'd recommend doing now:
+1. Report the text to the UK's National Cyber Security Centre by forwarding it to 7726 (spells SPAM on a keypad)
+2. Change your online banking password and enable two-factor authentication if you haven't already
+3. Be cautious of any follow-up contact — scammers sometimes attempt a second approach after a successful attack
+
+Your new card will arrive within 3–5 business days. In the meantime, you can add it to Apple Pay or Google Pay virtually if you need to make payments.
+
+Is there anything else I can help you with?
+
+Regards,
+Aisha Okonkwo
+Fraud & Security Team — First National Bank`,
+  },
+];
+
+export const SCENARIO_FRAUD_ADDITIONAL: MockEmail[] = [
+  {
+    id: "f-email-5",
+    from: { name: "Marcus Bellamy", email: "marcus.bellamy@outlook.com", role: "customer" },
+    to: { name: "Support Team", email: "support@firstnationalbank.com", role: "agent" },
+    subject: "Re: Suspicious transactions on my account — please help",
+    timestamp: "2026-03-09T11:00:00Z",
+    body: `Aisha,
+
+I've reported the text to 7726 and changed my banking password. I've also turned on 2FA.
+
+I'm still waiting for my new card. I've got a direct debit for my gym going out on the 10th — will it go through while my card is blocked? I don't want another missed payment issue.
+
+Marcus`,
+  },
+  {
+    id: "f-email-6",
+    from: { name: "Aisha Okonkwo", email: "a.okonkwo@firstnationalbank.com", role: "agent" },
+    to: { name: "Marcus Bellamy", email: "marcus.bellamy@outlook.com", role: "customer" },
+    subject: "Re: Suspicious transactions on my account — please help",
+    timestamp: "2026-03-09T12:20:00Z",
+    body: `Dear Mr. Bellamy,
+
+Well done for taking those steps quickly — that's exactly right.
+
+Good question about your direct debit. Card blocks only prevent card-present and card-not-present transactions — they do not affect direct debits, which pull from your account directly rather than via the card. Your gym direct debit on the 10th will process as normal.
+
+Your new card has been dispatched and is expected to arrive tomorrow (10th March). Once it arrives, activate it via the app and your card payments will resume.
+
+Regards,
+Aisha Okonkwo
+Fraud & Security Team — First National Bank`,
+  },
+  {
+    id: "f-email-7",
+    from: { name: "Marcus Bellamy", email: "marcus.bellamy@outlook.com", role: "customer" },
+    to: { name: "Support Team", email: "support@firstnationalbank.com", role: "agent" },
+    subject: "Re: Suspicious transactions on my account — please help",
+    timestamp: "2026-03-11T14:00:00Z",
+    body: `Aisha,
+
+Card arrived and is activated. Direct debit went through fine.
+
+Any update on when the £651.49 becomes permanent? It's showing as provisional credit still.
+
+Marcus`,
+  },
+  {
+    id: "f-email-8",
+    from: { name: "Aisha Okonkwo", email: "a.okonkwo@firstnationalbank.com", role: "agent" },
+    to: { name: "Marcus Bellamy", email: "marcus.bellamy@outlook.com", role: "customer" },
+    subject: "Re: Suspicious transactions on my account — please help",
+    timestamp: "2026-03-11T15:45:00Z",
+    body: `Dear Mr. Bellamy,
+
+Great to hear the card is set up and everything is running normally.
+
+I've just checked your case and I can see our fraud team completed their investigation this morning. The £651.49 provisional credit has been confirmed and will be made permanent on your account by end of business today. You should see it update from "provisional" to a normal credit within the next few hours.
+
+Your case is now closed on our end. You'll receive a formal closure letter by post within 7 days.
+
+Thank you for your patience throughout this, Mr. Bellamy. I'm sorry it happened, but glad we could resolve it fully.
+
+Regards,
+Aisha Okonkwo
+Fraud & Security Team — First National Bank`,
+  },
+];
+
+export type ScenarioId = "wire" | "fraud";
+
+export const SCENARIOS: {
+  id: ScenarioId;
+  label: string;
+  initial: MockEmail[];
+  additional: MockEmail[];
+}[] = [
+  { id: "wire", label: "Wire transfer", initial: MOCK_THREAD, additional: ADDITIONAL_EMAILS },
+  { id: "fraud", label: "Fraud / card", initial: SCENARIO_FRAUD, additional: SCENARIO_FRAUD_ADDITIONAL },
+];
+

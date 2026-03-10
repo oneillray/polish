@@ -4,6 +4,22 @@ import type { SuggestionContext, Suggestion } from "./suggestions.types";
 const SUGGESTION_TIMEOUT_MS = 5000;
 const ENDPOINT = "/api/suggestions";
 
+async function handleSuggestionResponse(res: Response): Promise<string> {
+  const text = await res.text().catch(() => `Request failed (${res.status})`);
+  if (!res.ok) {
+    try {
+      const body = JSON.parse(text) as { error?: string; details?: string };
+      const msg = body.error ?? text;
+      throw new Error(body.details ? `${msg} ${body.details}` : msg);
+    } catch (e) {
+      if (e instanceof Error && e.message !== text) throw e;
+      throw new Error(text || `Request failed (${res.status})`);
+    }
+  }
+  const data = JSON.parse(text) as { content?: string };
+  return data.content ?? "";
+}
+
 const REGENERATABLE_TONES = ["Empathetic", "Direct"] as const;
 
 export async function generateSuggestionForTone(
@@ -16,11 +32,7 @@ export async function generateSuggestionForTone(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ system: prompt.system, user: prompt.user }),
-    }).then(async (r) => {
-      if (!r.ok) throw new Error(await r.text().catch(() => `Request failed (${r.status})`));
-      const data = (await r.json()) as { content?: string };
-      return data.content ?? "";
-    }),
+    }).then((r) => handleSuggestionResponse(r)),
     new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error("Suggestion timeout")), SUGGESTION_TIMEOUT_MS)
     ),
@@ -37,14 +49,7 @@ export async function generateSuggestions(context: SuggestionContext): Promise<S
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ system: prompt.system, user: prompt.user }),
-      }).then(async (res) => {
-        if (!res.ok) {
-          const err = await res.text().catch(() => "");
-          throw new Error(err || `Request failed (${res.status})`);
-        }
-        const data = (await res.json()) as { content?: string };
-        return data.content ?? "";
-      }),
+      }).then((res) => handleSuggestionResponse(res)),
       new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error("Suggestion timeout")), SUGGESTION_TIMEOUT_MS)
       ),

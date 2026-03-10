@@ -77,6 +77,32 @@ body {
   padding: 22px 24px;
   border-bottom: 1px solid var(--border);
   background: var(--gse-semantic-background-container-page-default, #ffffff);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.pageHeader__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.pageHeader__label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.pageHeader__select {
+  font-size: 13px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--gse-semantic-background-container-page-default, #ffffff);
+  color: var(--text);
+  min-width: 140px;
 }
 
 .title {
