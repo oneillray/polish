@@ -282,6 +282,7 @@ export default defineConfig(({ mode }) => {
         input: {
           selection: "./index-selection.html",
           full: "./index-full.html",
+          "thread-demo": "./index-thread-demo.html",
         },
       },
     },
